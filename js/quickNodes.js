@@ -1,4 +1,4 @@
-import { app } from "/scripts/app.js";
+import { app } from "../../../scripts/app.js";
 
 // Adds a bunch of context menu entries for quickly adding common steps
 
@@ -145,6 +145,7 @@ app.registerExtension({
 		if (
 			nodeData.name === "CheckpointLoaderSimple" ||
 			nodeData.name === "CheckpointLoader" ||
+			nodeData.name === "CheckpointLoader|pysssss" ||
 			nodeData.name === "LoraLoader" ||
 			nodeData.name === "LoraLoader|pysssss"
 		) {
