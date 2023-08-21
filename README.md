@@ -30,8 +30,14 @@ Adds a setting to make moving nodes always snap to grid.
 ## [Testing] "Better" Loader Lists
 ![image](https://github.com/pythongosssss/ComfyUI-Custom-Scripts/assets/125205205/664caa71-f25f-4a96-a04a-1466d6b2b8b4)  
 Adds custom Lora and Checkpoint loader nodes, these have the ability to show preview images, just place a png or jpg next to the file and it'll display in the list on hover (e.g. sdxl.safetensors and sdxl.png).  
-![image](https://github.com/pythongosssss/ComfyUI-Custom-Scripts/assets/125205205/e15b5e83-4f9d-4d57-8324-742bedf75439)  
-Optionally enable subfolders via the settings 
+Optionally enable subfolders via the settings:  
+![image](https://github.com/pythongosssss/ComfyUI-Custom-Scripts/assets/125205205/e15b5e83-4f9d-4d57-8324-742bedf75439)   
+Adds an "examples" widget to load sample prompts, triggerwords, etc:  
+![image](https://github.com/pythongosssss/ComfyUI-Custom-Scripts/assets/125205205/ad1751e4-4c85-42e7-9490-e94fb1cbc8e7)  
+These should be stored in a folder matching the name of the model, e.g. if it is `loras/add_detail.safetensors` put your files in as  `loras/add_detail/*.txt`  
+To quickly save a generated image as the preview to use for the model, you can right click on an image on a node, and select Save as Preview and choose the model to save the preview for:  
+![image](https://github.com/pythongosssss/ComfyUI-Custom-Scripts/assets/125205205/9fa8e9db-27b3-45cb-85c2-0860a238fd3a)
+
 
 ## Constrain Image
 Adds a node for resizing an image to a max & min size optionally cropping if required.
@@ -57,7 +63,13 @@ Provides a simple method to set custom denoise on the advanced sampler
 
 ## Lock Nodes & Groups
 ![image](https://user-images.githubusercontent.com/125205205/230172868-5c5a943c-ade1-4799-bf80-cc931da5d4b2.png)  
+![image](https://github.com/pythongosssss/ComfyUI-Custom-Scripts/assets/125205205/cfca09d9-38e5-4ecd-8b73-1455009fcd67)  
 Adds a lock option to nodes & groups that prevents you from moving them until unlocked
+
+## LoRA Info
+![image](https://github.com/pythongosssss/ComfyUI-Custom-Scripts/assets/125205205/5539b7a4-559e-4e35-9aa1-51b06e11c772)
+![image](https://github.com/pythongosssss/ComfyUI-Custom-Scripts/assets/125205205/32405df6-b367-404f-a5df-2d4347089a9e)  
+Adds "View Info" menu option to view details about the selected LoRA
 
 ## Math Expression
 Allows for evaluating complex expressions using values from the graph.  
@@ -141,6 +153,24 @@ Allows you to control the rendering of the links between nodes between straight,
 <br>
 
 # Changelog
+## 2023-08-20
+### New
+- ✨ Add LoRA Info menu option for displaying LoRA metadata
+### Minor
+- 🐛 Fix crash on preset text replacement (thanks to @sjuxax)
+
+## 2023-08-19
+### New
+- ✨ Add support for importing JPG files with embedded metadata (e.g. from Civitai)
+### Minor
+- 🐛 Fix crash on graph arrange where LiteGraph sometimes stores links to deleted nodes
+- 🐛 Fix a couple of rendering issues in workflow export
+
+## 2023-08-18
+### New
+- ✨ Add "example" widget to custom LoRA + Checkpoint loader allowing you to quickly view saved prompts, triggers, etc
+- ✨ Add quick "Save as Preview" option on images to save generated images for models
+
 ## 2023-08-16
 ### New
 - ✨ Add repeater node for generating lists or quickly duplicating nodes
