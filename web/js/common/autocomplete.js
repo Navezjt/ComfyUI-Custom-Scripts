@@ -291,8 +291,7 @@ class TextAreaCaretHelper {
 
 			this.el.value =
 				this.el.value.substring(0, startPos + offset) + value + this.el.value.substring(endPos, this.el.value.length);
-			this.el.selectionStart = startPos + value.length;
-			this.el.selectionEnd = startPos + value.length;
+			this.el.selectionEnd = this.el.selectionStart = startPos + value.length + offset;
 		} else {
 			this.el.value += value;
 		}
@@ -302,6 +301,7 @@ class TextAreaCaretHelper {
 /*********************/
 
 export class TextAreaAutoComplete {
+	static separator = "";
 	static enabled = true;
 
 	static groups = {};
@@ -394,6 +394,8 @@ export class TextAreaAutoComplete {
 					this.#hide();
 					break;
 			}
+		} else if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "ArrowLeft" || e.key === "ArrowRight") {
+			return;
 		}
 		if (!e.defaultPrevented) {
 			this.#update();
@@ -521,7 +523,7 @@ export class TextAreaAutoComplete {
 				{
 					onclick: () => {
 						this.el.focus();
-						this.helper.insertAtCursor(wordInfo.text, -before.length);
+						this.helper.insertAtCursor(wordInfo.text + TextAreaAutoComplete.separator, -before.length);
 						setTimeout(() => {
 							this.#update();
 						}, 150);
