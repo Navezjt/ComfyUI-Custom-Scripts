@@ -314,7 +314,10 @@ class TextAreaCaretHelper {
 export class TextAreaAutoComplete {
 	static globalSeparator = "";
 	static enabled = true;
+	static insertOnTab = true;
+	static insertOnEnter = true;
 	static replacer = undefined;
+	static lorasEnabled = false;
 
 	/** @type {Record<string, Record<string, AutoCompleteEntry>>} */
 	static groups = {};
@@ -322,6 +325,8 @@ export class TextAreaAutoComplete {
 	static globalGroups = new Set();
 	/** @type {Record<string, AutoCompleteEntry>} */
 	static globalWords = {};
+	/** @type {Record<string, AutoCompleteEntry>} */
+	static globalWordsExclLoras = {};
 
 	/** @type {HTMLTextAreaElement} */
 	el;
@@ -385,8 +390,10 @@ export class TextAreaAutoComplete {
 					}
 					break;
 				case "Tab":
-					e.preventDefault();
-					this.#insertItem();
+					if (TextAreaAutoComplete.insertOnTab) {
+						this.#insertItem();
+						e.preventDefault();
+					}
 					break;
 			}
 		}
@@ -402,8 +409,10 @@ export class TextAreaAutoComplete {
 			switch (e.key) {
 				case "Enter":
 					if (!e.ctrlKey) {
-						e.preventDefault();
-						this.#insertItem();
+						if (TextAreaAutoComplete.insertOnEnter) {
+							this.#insertItem();
+							e.preventDefault();
+						}
 					}
 					break;
 			}
@@ -567,7 +576,7 @@ export class TextAreaAutoComplete {
 					onclick: () => {
 						this.el.focus();
 						let value = wordInfo.value ?? wordInfo.text;
-						if(TextAreaAutoComplete.replacer) {
+						if (TextAreaAutoComplete.replacer) {
 							value = TextAreaAutoComplete.replacer(value);
 						}
 						this.helper.insertAtCursor(value + this.separator, -before.length, wordInfo.caretOffset);

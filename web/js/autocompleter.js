@@ -4,6 +4,7 @@ import { api } from "../../../../scripts/api.js";
 import { $el, ComfyDialog } from "../../../../scripts/ui.js";
 import { TextAreaAutoComplete } from "./common/autocomplete.js";
 import { ModelInfoDialog } from "./common/modelInfoDialog.js";
+import { LoraInfoDialog } from "./modelInfo.js";
 
 function parseCSV(csvText) {
 	const rows = [];
@@ -23,6 +24,12 @@ function parseCSV(csvText) {
 	for (let i = 0; i < csvText.length; i++) {
 		const char = csvText[i];
 		const nextChar = csvText[i + 1];
+
+		// Special handling for backslash escaped quotes
+		if (char === "\\" && nextChar === quote) {
+			currentField += quote;
+			i++;
+		}
 
 		if (!inQuotedField) {
 			if (char === quote) {
@@ -44,6 +51,14 @@ function parseCSV(csvText) {
 				i++; // Skip the next quote
 			} else if (char === quote) {
 				inQuotedField = false;
+			} else if (char === "\r" || char === "\n" || i === csvText.length - 1) {
+				// Dont allow new lines in quoted text, assume its wrong
+				const parsed = parseCSV(currentField);
+				rows.pop();
+				rows.push(...parsed);
+				inQuotedField = false;
+				currentField = "";
+				rows.push([]);
 			} else {
 				currentField += char;
 			}
@@ -93,7 +108,7 @@ async function addCustomWords(text) {
 						// Word,[priority|alias]
 						num = +n[1];
 						if (isNaN(num)) {
-							text = n[1];
+							text = n[0] + "🔄️" + n[1];
 							value = n[0];
 						} else {
 							text = n[0];
@@ -104,14 +119,15 @@ async function addCustomWords(text) {
 						// a1111 csv format?
 						value = n[0];
 						priority = +n[2];
-						const aliases = n[3];
-						if (aliases) {
+						const aliases = n[3]?.trim();
+						if (aliases && aliases !== "null") { // Weird null in an example csv, maybe they are JSON.parsing the last column?
 							const split = aliases.split(",");
 							for (const text of split) {
 								p[text] = { text, priority, value };
 							}
 						}
 						text = value;
+						break;
 					default:
 						// Word,alias,priority
 						text = n[1];
@@ -124,6 +140,13 @@ async function addCustomWords(text) {
 			}, {})
 		);
 	}
+}
+
+function toggleLoras() {
+	[TextAreaAutoComplete.globalWords, TextAreaAutoComplete.globalWordsExclLoras] = [
+		TextAreaAutoComplete.globalWordsExclLoras,
+		TextAreaAutoComplete.globalWords,
+	];
 }
 
 class EmbeddingInfoDialog extends ModelInfoDialog {
@@ -268,7 +291,38 @@ app.registerExtension({
 			TextAreaAutoComplete.updateWords("pysssss.embeddings", words);
 		}
 
-		Promise.all([addEmbeddings(), addCustomWords()]);
+		async function addLoras() {
+			const loras = await api
+				.fetchApi("/pysssss/loras", { cache: "no-store" })
+				.then(res => res.json());
+			const words = {};
+			words["lora:"] = { text: "lora:" };
+
+			for (const lora of loras) {
+				const v = `<lora:${lora}:1.0>`;
+				words[v] = {
+					text: v,
+					info: () => new LoraInfoDialog(lora).show("loras", lora),
+				};
+			}
+
+			TextAreaAutoComplete.updateWords("pysssss.loras", words);
+		}
+
+		// store global words with/without loras
+		Promise.all([addEmbeddings(), addCustomWords()])
+            .then(() => {
+                TextAreaAutoComplete.globalWordsExclLoras = Object.assign(
+                    {},
+                    TextAreaAutoComplete.globalWords
+                );
+            })
+            .then(addLoras)
+			.then(() => {
+                if (!TextAreaAutoComplete.lorasEnabled) {
+					toggleLoras(); // off by default
+				}
+            });
 
 		const STRING = ComfyWidgets.STRING;
 		const SKIP_WIDGETS = new Set(["ttN xyPlot.x_values", "ttN xyPlot.y_values"]);
@@ -347,6 +401,28 @@ app.registerExtension({
 							]
 						),
 						$el(
+							"label.comfy-tooltip-indicator",
+							{
+								title: "This requires other ComfyUI nodes/extensions that support using LoRAs in the prompt.",
+								textContent: "Loras enabled ",
+								style: {
+									display: "block",
+								},
+							},
+							[
+								$el("input", {
+									type: "checkbox",
+									checked: !!TextAreaAutoComplete.lorasEnabled,
+									onchange: (event) => {
+										const checked = !!event.target.checked;
+										TextAreaAutoComplete.lorasEnabled = checked;
+										toggleLoras();
+										localStorage.setItem(id + ".ShowLoras", TextAreaAutoComplete.lorasEnabled);
+									},
+								}),
+							]
+						),
+						$el(
 							"label",
 							{
 								textContent: "Auto-insert comma ",
@@ -386,6 +462,59 @@ app.registerExtension({
 								}),
 							]
 						),
+						$el(
+							"label",
+							{
+								textContent: "Insert suggestion on: ",
+								style: {
+									display: "block",
+								},
+							},
+							[
+								$el(
+									"label",
+									{
+										textContent: "Tab",
+										style: {
+											display: "block",
+											marginLeft: "20px",
+										},
+									},
+									[
+										$el("input", {
+											type: "checkbox",
+											checked: !!TextAreaAutoComplete.insertOnTab,
+											onchange: (event) => {
+												const checked = !!event.target.checked;
+												TextAreaAutoComplete.insertOnTab = checked;
+												localStorage.setItem(id + ".InsertOnTab", checked);
+											},
+										}),
+									]
+								),
+								$el(
+									"label",
+									{
+										textContent: "Enter",
+										style: {
+											display: "block",
+											marginLeft: "20px",
+										},
+									},
+									[
+										$el("input", {
+											type: "checkbox",
+											checked: !!TextAreaAutoComplete.insertOnEnter,
+											onchange: (event) => {
+												const checked = !!event.target.checked;
+												TextAreaAutoComplete.insertOnEnter = checked;
+												localStorage.setItem(id + ".InsertOnEnter", checked);
+											},
+										}),
+									]
+								),
+							]
+						),
 						$el("button", {
 							textContent: "Manage Custom Words",
 							onclick: () => {
@@ -402,9 +531,12 @@ app.registerExtension({
 				]);
 			},
 		});
+
 		TextAreaAutoComplete.enabled = enabledSetting.value;
 		TextAreaAutoComplete.replacer = localStorage.getItem(id + ".ReplaceUnderscore") === "true" ? (v) => v.replaceAll("_", " ") : undefined;
-
+		TextAreaAutoComplete.insertOnTab = localStorage.getItem(id + ".InsertOnTab") !== "false";
+		TextAreaAutoComplete.insertOnEnter = localStorage.getItem(id + ".InsertOnEnter") !== "false";
+		TextAreaAutoComplete.lorasEnabled = localStorage.getItem(id + ".ShowLoras") === "true";
 	},
 	beforeRegisterNodeDef(_, def) {
 		// Process each input to see if there is a custom word list for
